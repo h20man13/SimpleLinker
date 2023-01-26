@@ -182,3 +182,5 @@ int LexToken(struct Lexer* Lex, struct Token* Tok){
     }
     return -1;
 }
+
+int LexTokens(struct Lexer* Lex, struct TokenList* Tok);
