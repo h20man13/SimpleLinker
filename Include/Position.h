@@ -4,9 +4,9 @@
 struct Position{
     int LineNumber;
     int LinePosition;
-}
+};
 
-void PrintPosition(Position Pos);
+void PrintPosition(struct Position Pos);
 
 
 #endif

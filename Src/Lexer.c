@@ -1,8 +1,12 @@
 #include "Lexer.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include "Token.h"
+#include <string.h>
 
 int OpenFileSource(struct Lexer* Lex, char* FileName){
     Lex->Source = fopen(FileName, "r");
-    if(Lex->Source == NULL){
+    if(Lex->Source != NULL){
         return -1; //Error Source was not set correctly or some other error occured
     } else {
         return 0;
@@ -10,34 +14,48 @@ int OpenFileSource(struct Lexer* Lex, char* FileName){
 }
 
 char* LexerStateToString(enum LexerState State){
-    if(State == INIT){
-        return "INIT";
-    } else if(State == HEADER){
-        return "HEADER";
-    } else if(State == INTEGER){
-        return "INTEGER";
-    } else if(State == LABEL){
-        return "LABEL";
-    } else if(State == TEXT){
-        return "TEXT";
-    } else if(State == WS){
-        return "WS";
-    } else if(State == COMMENT){
-        return "COMMENT";
+    if(State == INIT_STATE){
+        return "INIT_STATE";
+    } else if(State == HEADER_STATE){
+        return "HEADER_STATE";
+    } else if(State == INTEGER_STATE){
+        return "INTEGER_STATE";
+    } else if(State == LABEL_STATE){
+        return "LABEL_STATE";
+    } else if(State == TEXT_STATE){
+        return "TEXT_STATE";
+    } else if(State == WS_STATE){
+        return "WS_STATE";
+    } else if(State == COMMENT_STATE){
+        return "COMMENT_STATE";
     } else {
         printf("Error Invalid State %d", State);
-        return NULL;
+        return -1;
     }
 }
 
 static char LexerGetChar(struct Lexer* Lex){
-    if(Lex->File != NULL) return fgetc(Lex->Source);
+    if(Lex->Source != 0) return fgetc(Lex->Source);
     else return '\0';
 }
 
 static int LexerAppendLexeme(char CharToAppend, char*Lexeme, int IndexToAppend){
     Lexeme[IndexToAppend] = CharToAppend;
     IndexToAppend++;
+}
+
+static int CreateTokenAndResetLexer(struct Token** Tok, int* LexemeIndex, char*LexemeArray, int LexemeArraySize, int* LineNumber, int* LinePosition){
+    *Tok = malloc(sizeof(struct Token));
+    (*Tok)->Pos.LineNumber = *LineNumber;
+    (*Tok)->Pos.LinePosition = *LinePosition;
+    (*Tok)->Text = malloc(LexemeArraySize);
+    memcpy((*Tok)->Text, LexemeArray, LexemeArraySize);
+
+    //Now we need to reset some of the Temporary stuff...
+    *LexemeIndex = 0;
+    for(int i = 0; i < LexemeArraySize; i++){
+        LexemeArray[i] = '\0';
+    }
 }
 
 int LexToken(struct Lexer* Lex, struct Token* Tok){
@@ -47,59 +65,61 @@ int LexToken(struct Lexer* Lex, struct Token* Tok){
 
     char CurrentLexeme[40];
     int CurrentLexemeIndex = 0;
-    enum LexerState CurrentState = INIT;
+    enum LexerState CurrentState = INIT_STATE;
     static int LineNumber = 0;
     static int LinePosition = 0;
 
-    while(1){
-        char CurrentChar = LexerGetChar(Lex);
-        switch (LexerState){
-            case INIT:
+    char CurrentChar;
+    while(CurrentChar = LexerGetChar(Lex)){
+        switch (CurrentState){
+            case INIT_STATE:
                 if(CurrentChar == '\r' || CurrentChar == '\n'){
                     LinePosition = 0;
                     LineNumber++;
-                    CurrentState = WS;
+                    CurrentState = WS_STATE;
                     continue;
                 } else if(isspace(CurrentChar)){
-                    CurrentState = WS;
+                    CurrentState = WS_STATE;
                     LinePosition++;
                     continue;
                 } else if(CurrentChar == '-'){
-                    CurrentState = HEADER;
+                    CurrentState = HEADER_STATE;
                     LinePosition++;
                     continue;
                 } else if(CurrentChar == '['){
-                    CurrentState = COMMENT;
+                    CurrentState = COMMENT_STATE;
                     LinePosition++;
                     continue;
                 } else if(CurrentChar == '.'){
-                    CurrentState = LABEL;
+                    CurrentState = LABEL_STATE;
                     LinePosition++;
                     LexerAppendLexeme(CurrentChar, CurrentLexeme, CurrentLexemeIndex);
                     continue;
-                } else if(isletter(CurrentChar)){
-                    CurrentState = TEXT;
+                } else if(CurrentChar >= 'a' && CurrentChar <= 'z' || CurrentChar >= 'A' || CurrentChar <= 'Z'){
+                    CurrentState = TEXT_STATE;
                     LinePosition++;
                     LexerAppendLexeme(CurrentChar, CurrentLexeme, CurrentLexemeIndex);
                 } else {
                     printf("Invalid Chracter Found in Init Space - %c", CurrentChar);
-                    continue;
+                    break;
                 }
-            case WS:
+            case WS_STATE:
                 if(CurrentChar == '\n'){
                     LineNumber++;
                     LinePosition=0;
+                    continue;
                 } else if(isspace(CurrentChar)){
                     LinePosition++;
                     continue;
                 } else {
+                    CurrentState = INIT_STATE;
                     LexerAppendLexeme(CurrentChar, CurrentLexeme, CurrentLexemeIndex);
                     continue;
                 }
-            case COMMENT:
+            case COMMENT_STATE:
                 if(CurrentChar == ']'){
                     LinePosition++;
-                    CurrentState = INIT;
+                    CurrentState = INIT_STATE;
                     continue;
                 } else if(CurrentChar == '\n') {
                     LinePosition = 0;
@@ -109,13 +129,12 @@ int LexToken(struct Lexer* Lex, struct Token* Tok){
                     LinePosition++;
                     continue;
                 }
-            case HEADER:
+            case HEADER_STATE:
                 if (CurrentChar == '-'){
-                    CurrentState = INIT;
-                    Token Tok;
+                    CurrentState = INIT_STATE;
                     LinePosition++;
-                    CreateTokenAndResetTempLexer(&Tok, &CurrentLexemeIndex, CurrentLexeme, 40, &LineNumber, &LinePosition);
-                    return Tok;
+                    CreateTokenAndResetLexer(&Tok, &CurrentLexemeIndex, CurrentLexeme, 40, &LineNumber, &LinePosition);
+                    return 0;
                 } else if (CurrentChar == '\n'){
                     LinePosition = 0;
                     LineNumber++;
@@ -126,57 +145,40 @@ int LexToken(struct Lexer* Lex, struct Token* Tok){
                     LexerAppendLexeme(CurrentChar, CurrentLexeme, CurrentLexemeIndex);
                     continue;
                 }
-            case INTEGER:
+            case INTEGER_STATE:
                 if(isdigit(CurrentChar) || (CurrentChar >= 'a' && CurrentChar <= 'f') || (CurrentChar >= 'A' && CurrentChar <= 'F')){
                     LexerAppendLexeme(CurrentChar, CurrentLexeme, CurrentLexemeIndex);
                     continue;
                 } else {
-                    CurrentState = INIT;
-                    Token Tok;
+                    CurrentState = INIT_STATE;
                     LinePosition++;
-                    CreateTokenAndResetTempLexer(&Tok, &CurrentLexemeIndex, CurrentLexeme, 40, &LineNumber, &LinePosition);
-                    return Tok;
+                    CreateTokenAndResetLexer(&Tok, &CurrentLexemeIndex, CurrentLexeme, 40, &LineNumber, &LinePosition);
+                    return 0;
                 }
-            case LABEL:
+            case LABEL_STATE:
                 if(isspace(CurrentChar)){
                     LexerAppendLexeme(CurrentChar, CurrentLexeme, CurrentLexemeIndex);
                     continue;
                 } else {
-                    CurrentState = INIT;
-                    Token Tok;
+                    CurrentState = INIT_STATE;
                     LinePosition++;
-                    CreateTokenAndResetTempLexer(&Tok, &CurrentLexemeIndex, CurrentLexeme, 40, &LineNumber, &LinePosition);
-                    return Tok;
+                    CreateTokenAndResetLexer(&Tok, &CurrentLexemeIndex, CurrentLexeme, 40, &LineNumber, &LinePosition);
+                    return 0;
                 }
-            case TEXT:
-                if(!isspace()){
+            case TEXT_STATE:
+                if(!isspace(CurrentChar)){
                     LinePosition++;
                     LexerAppendLexeme(CurrentChar, CurrentLexeme, CurrentLexemeIndex);
                     continue;
                 } else {
-                    Token Tok;
                     LinePosition++;
-                    CreateTokenAndResetTempLexer(&Tok, &CurrentLexemeIndex, CurrentLexeme, 40, &LineNumber, &LinePosition);
-                    return Tok;
+                    CreateTokenAndResetLexer(&Tok, &CurrentLexemeIndex, CurrentLexeme, 40, &LineNumber, &LinePosition);
+                    return 0;
                 }
             default:
                 printf("Error: In Invalid State %d", CurrentState);
                 break;
         }
     }
-    return NULL;
-}
-
-static int CreateTokenAndResetLexer(struct Token** Tok, int* LexemeIndex, char*LexemeArray, int LexemeArraySize, int* LineNumber, int* Position){
-    *Tok = malloc(sizeof(struct Token));
-    *(Tok)->Pos->LineNumber = *LineNumber;
-    *(Tok)->Pos->LinePosition = *LinePosition;
-    *(Tok)->TokenText = malloc(LexemeArraySize);
-    memcpy(Tok->TokenText, LexemeArray, LexemeArraySize);
-
-    //Now we need to reset some of the Temporary stuff...
-    *LexemeIndex = 0;
-    for(int i = 0; i < LexemeArraySize; i++){
-        LexemeArray[i] = '\0';
-    }
+    return -1;
 }

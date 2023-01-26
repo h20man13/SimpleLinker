@@ -1,6 +1,8 @@
 #ifndef TOKEN_H
 #define TOKEN_H
 
+#include "Position.h"
+
 enum TokenType{
     SEGMENTS,
     SYMBOLS,
@@ -11,19 +13,19 @@ enum TokenType{
 };
 
 struct Token{
-    char* TokenText;
-    Position Pos;
-    TokenType Type;
-}
+    char* Text;
+    struct Position Pos;
+    enum TokenType Type;
+};
 
 struct TokenListElem{
-    struct Token Tok;
+    struct Token* Tok;
     struct TokenListElem* Next;
-}
+};
 
 struct TokenList{
-    struct TokenListElem Root;
-}
+    struct TokenListElem* Root;
+};
 
 
 void PrintTokenList(struct TokenList* List);

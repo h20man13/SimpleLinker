@@ -1,38 +1,43 @@
 #include "Token.h"
 
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
+
 void PrintTokenType(enum TokenType Type){
     if(Type == SEGMENTS){
-        Printf("- segments -");
+        printf("- segments -");
     } else if(Type == SYMBOLS){
-        Printf("- symbols -");
-    } else if(Tok->Type == RELOCATIONS){
-        Printf("- rels -");
-    } else if(Tok->Type == DATA){
-        Printf("- data -");
-    } else if(Tok->Type == INTEGER){
-        Printf("INTEGER");
-    } else if(Tok->Type == LABEL){
-        Printf("LABEL");
-    } else if(Tok->Type == IDENTIIFER){
-        Printf("IDENTIFIER");
+        printf("- symbols -");
+    } else if(Type == RELOCATIONS){
+        printf("- rels -");
+    } else if(Type == DATA){
+        printf("- data -");
+    } else if(Type == INTEGER){
+        printf("INTEGER");
+    } else if(Type == LABEL){
+        printf("LABEL");
+    } else if(Type == DATA){
+        printf("DATA");
     } else {
-        perror("Unknown Token Type With Number Value ~ %d", Type);
+        printf("Unknown Token Type With Number Value ~ %d", Type);
     }
 }
-void PrintToken(struct Token* Tok);{
-    Printf("Tok { ");
+
+void PrintToken(struct Token* Tok){
+    printf("Tok { ");
     PrintTokenType(Tok->Type);
-    Printf("| %s | ", TokenText);
+    printf("| %s | ", Tok->Text);
     PrintPosition(Tok->Pos);
-    Printf(" }");
+    printf(" }");
 }
 
-void PrintTokenList(struct TokenList List){
+void PrintTokenList(struct TokenList* List){
     struct TokenListElem* Elem = List->Root;
-    if(Root != NULL){
+    if(Elem != NULL){
         do{
-            PrintToken(Elem->Token);
-            Elem = Elem -> Next;
+            PrintToken(Elem->Tok);
+            Elem = Elem->Next;
         } while(Elem != NULL);
     }
 }
