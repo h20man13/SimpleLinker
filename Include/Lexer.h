@@ -14,15 +14,23 @@ enum LexerState{
     COMMENT_STATE
 };
 
-char* LexerStateToString(enum LexerState State);
-
 struct Lexer{
     FILE* Source;
+    int LinePosition;
+    int LineNumber;
+    char CurrentCharacter;
+    char* Lexeme;
+    int LexemeIndex;
+    int LexemeArraySize;
 };
 
-int OpenLexerFileSource(struct Lexer* Lex, char* FileName);
+char* LexerStateToString(enum LexerState State);
+char PeekLetter(struct Lexer* Lex);
+char AdvanceSource(struct Lexer* Lex);
+
+int OpenLexerFileSource(struct Lexer* Lex, char* FileName, int LexemeBufferSize);
 int LexToken(struct Lexer* Lex, struct Token* Tok);
-int LexTokens(struct Lexer* Lex, struct TokenList* Tok);
+int LexTokens(struct Lexer* Lex, struct TokenList** Tok);
 int EndLexer(struct Lexer* Lex);
 
 #endif

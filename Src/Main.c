@@ -1,11 +1,12 @@
 #include "LinkerFile.h"
 #include "Parser.h"
+#include "Lexer.h"
 #include <stdio.h>
 #include <stdlib.h>
 
-#define PROJECT_1
-
+#define PROJECT_1_LEXER
 #define TRACE
+
 int main(int ArgC, char** Argv){
     if(ArgC <= 0){
         perror("Error: Not enough arguments found to run Simple Linker");
@@ -32,5 +33,26 @@ int main(int ArgC, char** Argv){
     
     free(FileStruct);
     
-    #endif
+#endif
+
+#ifdef PROJECT_1_LEXER
+struct Lexer* Lex = malloc(sizeof(struct Lexer));
+
+printf("Opening Lexer on File %s\n", Argv[1]);
+int Result = OpenLexerFileSource(Lex, Argv[1], 60);
+if(Result){
+    perror("Error Opening Lexer the Session will time out");
+    return 1;
+}
+
+printf("Lexing Tokens...");
+struct TokenList* List;
+Result = LexTokens(Lex, &List);
+if(Result == 1){
+    return 1;
+}
+
+PrintTokenList(List);
+
+#endif
 }
