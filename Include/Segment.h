@@ -14,5 +14,6 @@ struct Segment{
 };
 
 char* SegmentFlagsToString(int FlagMask);
+int FlagStringToInt(char* FlagString);
 
 #endif

@@ -20,7 +20,7 @@ void PrintLinkerFile(struct LinkerFile* ToPrint){
 
     for(int i = 0; i < ToPrint->NumberRelocationEntries; i++){
         struct RelocationEntry* Rel = &(ToPrint->Entries[i]);
-        printf("%x %d %x %s\n", Rel->Location, Rel->Seg, Rel->Ref, RelocationTypeToString(Rel->Type));
+        printf("%x %s %x %s\n", Rel->Location, Rel->Seg, Rel->Ref, RelocationTypeToString(Rel->Type));
     }
 
     for(int i = 0; i < ToPrint->NumberSegments; i++){

@@ -10,7 +10,7 @@ char* RelocationTypeToString(enum RelocationType Type);
 
 struct RelocationEntry{
     int Location;
-    int Seg;
+    char* Seg;
     int Ref;
     enum RelocationType Type;
 };

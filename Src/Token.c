@@ -48,7 +48,7 @@ struct Token* RemoveToken(struct TokenList* Toks){
         free(ToRemoveElem);
         return Tok;
     } else {
-        return NULL:
+        return NULL;
     }
 }
 

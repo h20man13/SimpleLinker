@@ -4,7 +4,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#define PROJECT_1_LEXER
+#define PROJECT_1_FULL
 #define TRACE
 
 int main(int ArgC, char** Argv){
@@ -51,6 +51,21 @@ struct TokenList* List = LexTokens(Lex);
 printf("Printing Token List...");
 
 PrintTokenList(List);
+
+#endif
+
+#ifdef PROJECT_1_FULL
+
+struct Lexer* Lex = malloc(sizeof(struct Lexer));
+int Result = OpenLexerFileSource(Lex, Argv[1], 100);
+struct TokenList* List = LexTokens(Lex);
+
+struct Parser* P = malloc(sizeof(struct Parser));
+P->Tokens = List;
+
+struct LinkerFile* LFile = ParseLinkerFile(P);
+PrintLinkerFile(LFile);
+
 
 #endif
 }
