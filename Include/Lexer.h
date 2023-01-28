@@ -29,8 +29,8 @@ char PeekLetter(struct Lexer* Lex);
 char AdvanceSource(struct Lexer* Lex);
 
 int OpenLexerFileSource(struct Lexer* Lex, char* FileName, int LexemeBufferSize);
-int LexToken(struct Lexer* Lex, struct Token* Tok);
-int LexTokens(struct Lexer* Lex, struct TokenList** Tok);
+struct Token* LexToken(struct Lexer* Lex);
+struct TokenList* LexTokens(struct Lexer* Lex);
 int EndLexer(struct Lexer* Lex);
 
 #endif

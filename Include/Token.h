@@ -4,17 +4,15 @@
 #include "Position.h"
 
 enum TokenType{
-    SEGMENTS,
-    SYMBOLS,
-    RELOCATIONS,
-    DATA,
-    INTEGER,
-    LABEL,
+    HEADER_TYPE,
+    INTEGER_TYPE,
+    LABEL_TYPE,
+    TEXT_TYPE
 };
 
 struct Token{
     char* Text;
-    struct Position Pos;
+    struct Position* Pos;
     enum TokenType Type;
 };
 
@@ -27,6 +25,9 @@ struct TokenList{
     struct TokenListElem* Root;
 };
 
+int TokenListIsEmpty(struct TokenList* Toks);
+struct Token* RemoveToken(struct TokenList* Toks);
+int AddToken(struct TokenList* Toks, struct Token* Tok);
 
 void PrintTokenList(struct TokenList* List);
 void PrintTokenType(enum TokenType Type);

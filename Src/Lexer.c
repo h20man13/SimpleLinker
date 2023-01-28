@@ -8,24 +8,16 @@
 #define TRACE
 
 int OpenLexerFileSource(struct Lexer* Lex, char* FileName, int LexemeBufferSize){
-    printf("Opening the file source...");
-    printf("Printing data...");
     Lex->Source = fopen(FileName, "r");
-
-    printf("Setting up initial variables...");
-    Lex->CurrentCharacter = '\0';
     Lex->LexemeArraySize = LexemeBufferSize;
     Lex->LexemeIndex = 0;
     Lex->LineNumber = 0;
     Lex->LinePosition = 0;
     Lex->Lexeme = malloc(LexemeBufferSize);
     if(Lex->Source == NULL){
-        printf("Error the File %s could not be opened successfully", FileName);
+        printf("Error the File %s could not be opened successfully\n", FileName);
         return -1; //Error Source was not set correctly or some other error occured
     } else {
-#ifdef TRACE
-        printf("Advancing Source of the Lexer");
-#endif
         AdvanceSource(Lex);
         return 0;
     }
@@ -52,37 +44,44 @@ char* LexerStateToString(enum LexerState State){
     }
 }
 
-static int LexerAppendLexeme(struct Lexer* Lex){
+static int LexerAppendCharacter(struct Lexer* Lex){
     Lex->Lexeme[Lex->LexemeIndex] = PeekLetter(Lex);
     Lex->LexemeIndex++;
     return 0;
 }
 
-static int CreateTokenAndResetLexer(struct Token** Tok, struct Lexer* Lex){
-    *Tok = malloc(sizeof(struct Token));
-    (*Tok)->Pos.LineNumber = Lex->LineNumber;
-    (*Tok)->Pos.LinePosition = Lex->LinePosition;
-    (*Tok)->Text = malloc(Lex->LexemeArraySize);
-    memcpy((*Tok)->Text, Lex->Lexeme, Lex->LexemeArraySize);
-
-    //Now we need to reset some of the Temporary stuff...
+static int ResetLexer(struct Lexer* Lex){
     Lex->LexemeIndex = 0;
     for(int i = 0; i < Lex->LexemeArraySize; i++){
         Lex->Lexeme[i] = '\0';
     }
-
     return 0;
 }
 
-int LexToken(struct Lexer* Lex, struct Token* Tok){
+static struct Token* CreateTokenAndResetLexer(struct Lexer* Lex, enum TokenType Type){
+    struct Token* Tok = malloc(sizeof(struct Token));
+    Tok->Pos = malloc(sizeof(struct Position));
+    Tok->Pos->LineNumber = Lex->LineNumber;
+    Tok->Pos->LinePosition = Lex->LinePosition;
+    Tok->Text = malloc(Lex->LexemeArraySize);
+    memcpy(Tok->Text, Lex->Lexeme, Lex->LexemeArraySize);
+    Tok->Type = Type;
+    
+    ResetLexer(Lex);
+
+    return Tok;
+}
+
+struct Token* LexToken(struct Lexer* Lex){
     if(Lex->Source == NULL){
-        return 0;
+        printf("Error: Lexrer Source was not ititialized correctly!!!\n");
+        return NULL;
     }
 
     enum LexerState CurrentState = INIT_STATE;
 
     char CurrentChar;
-    while((CurrentChar = PeekLetter(Lex))){
+    while((CurrentChar = PeekLetter(Lex)) && !feof(Lex->Source)){
         switch (CurrentState){
             case INIT_STATE:
                 if(isspace(CurrentChar)){
@@ -91,7 +90,7 @@ int LexToken(struct Lexer* Lex, struct Token* Tok){
                     continue;
                 } else if(CurrentChar == '-'){
                     CurrentState = HEADER_STATE;
-                    LexerAppendLexeme(Lex);
+                    LexerAppendCharacter(Lex);
                     AdvanceSource(Lex);
                     continue;
                 } else if(CurrentChar == '['){
@@ -100,16 +99,22 @@ int LexToken(struct Lexer* Lex, struct Token* Tok){
                     continue;
                 } else if(CurrentChar == '.'){
                     CurrentState = LABEL_STATE;
-                    LexerAppendLexeme(Lex);
+                    LexerAppendCharacter(Lex);
                     AdvanceSource(Lex);
                     continue;
-                } else if(CurrentChar >= 'a' && CurrentChar <= 'z' || CurrentChar >= 'A' || CurrentChar <= 'Z'){
+                } else if (isdigit(CurrentChar) || (CurrentChar >= 'a' && CurrentChar <= 'f') || (CurrentChar >= 'A' && CurrentChar <= 'F')) {
+                    CurrentState = INTEGER_STATE;
+                    LexerAppendCharacter(Lex);
+                    AdvanceSource(Lex);
+                    continue;
+                } else if((CurrentChar >= 'a' && CurrentChar <= 'z') || (CurrentChar >= 'A' && CurrentChar <= 'Z')){
                     CurrentState = TEXT_STATE;
-                    LexerAppendLexeme(Lex);
+                    LexerAppendCharacter(Lex);
                     AdvanceSource(Lex);
                     continue;
                 } else {
-                    printf("Invalid Chracter Found in Init Space - %c", CurrentChar);
+                    printf("Invalid Chracter Found in Init Space - %c\n", CurrentChar);
+                    AdvanceSource(Lex);
                     break;
                 }
             case WS_STATE:
@@ -132,69 +137,76 @@ int LexToken(struct Lexer* Lex, struct Token* Tok){
             case HEADER_STATE:
                 if (CurrentChar == '-'){
                     CurrentState = INIT_STATE;
-                    CreateTokenAndResetLexer(&Tok, Lex);
-                    return 1;
+                    LexerAppendCharacter(Lex);
+                    return CreateTokenAndResetLexer(Lex, HEADER_TYPE);
                 } else {
-                    LexerAppendLexeme(Lex);
+                    LexerAppendCharacter(Lex);
                     continue;
                 }
             case INTEGER_STATE:
                 if(isdigit(CurrentChar) || (CurrentChar >= 'a' && CurrentChar <= 'f') || (CurrentChar >= 'A' && CurrentChar <= 'F')){
-                    LexerAppendLexeme(Lex);
+                    LexerAppendCharacter(Lex);
+                    AdvanceSource(Lex);
+                    continue;
+                } else if((CurrentChar >= 'g' && CurrentChar <= 'z') || (CurrentChar >= 'G' && CurrentChar <= 'Z')){
+                    CurrentState = TEXT_STATE;
+                    LexerAppendCharacter(Lex);
                     AdvanceSource(Lex);
                     continue;
                 } else {
                     CurrentState = INIT_STATE;
-                    CreateTokenAndResetLexer(&Tok, Lex);
-                    return 1;
+                    return CreateTokenAndResetLexer(Lex, INTEGER_TYPE);
                 }
             case LABEL_STATE:
                 if(!isspace(CurrentChar)){
-                    LexerAppendLexeme(Lex);
+                    LexerAppendCharacter(Lex);
                     AdvanceSource(Lex);
                     continue;
                 } else {
                     CurrentState = INIT_STATE;
-                    CreateTokenAndResetLexer(&Tok, Lex);
-                    return 1;
+                    return CreateTokenAndResetLexer(Lex, LABEL_TYPE);
                 }
             case TEXT_STATE:
                 if(!isspace(CurrentChar)){
-                    LexerAppendLexeme(Lex);
+                    LexerAppendCharacter(Lex);
+                    AdvanceSource(Lex);
                     continue;
                 } else {
                     CurrentState = INIT_STATE;
-                    CreateTokenAndResetLexer(&Tok, Lex);
-                    return 1;
+                    return CreateTokenAndResetLexer(Lex, TEXT_TYPE);
                 }
             default:
-                printf("Error: In Invalid State %d", CurrentState);
+                printf("Error: In Invalid State %d\n", CurrentState);
                 break;
         }
     }
-    return 0;
+    return NULL;
 }
 
-int LexTokens(struct Lexer* Lex, struct TokenList** TokList){
-    #ifdef TRACE
-        printf("Setting up the Array...");
-    #endif 
-    *TokList = malloc(sizeof(struct TokenList));
-    struct TokenListElem** Elem = &((*TokList)->Root);
+struct TokenList* LexTokens(struct Lexer* Lex){
+    struct TokenList* TokList = malloc(sizeof(struct TokenList));
     struct Token* Tok;
+    if(!feof(Lex->Source)){
+        if(Tok = LexToken(Lex)){
+            struct TokenListElem* Elem = malloc(sizeof(struct TokenListElem));
+            TokList->Root = Elem;
+            Elem->Tok = Tok;
+            while(Tok = LexToken(Lex)){
+                Elem->Next = malloc(sizeof(struct TokenListElem));
+                Elem = Elem->Next;
+                Elem->Tok = Tok;
 
-    if(LexToken(Lex, Tok)){
-        *Elem = malloc(sizeof(struct TokenListElem));
-        (*Elem)->Tok = Tok;
-        while(LexToken(Lex, Tok)){
-            (*Elem)->Next = malloc(sizeof(struct TokenListElem));
-            *Elem = (*Elem)->Next;
-            (*Elem)->Tok = Tok;
+                if(feof(Lex->Source))
+                    break;
+            }
+        } else {
+            printf("Token did not lex correctly!!!");
         }
-        return 1;
+    } else {
+        printf("Could not collect tokens from the file because the file was empty!!!");
     }
 
-    return 0;
+    return TokList;
 }
 
 char PeekLetter(struct Lexer* Lex){
@@ -202,14 +214,17 @@ char PeekLetter(struct Lexer* Lex){
 }
 
 char AdvanceSource(struct Lexer* Lex){
-    Lex->CurrentCharacter = fgetc(Lex->Source);
-    
-    if(Lex->CurrentCharacter == '\n'){
-        Lex->LineNumber++;
-        Lex->LinePosition = 0;
+    if(!feof(Lex->Source)){
+        Lex->CurrentCharacter = fgetc(Lex->Source);
+        if(Lex->CurrentCharacter == '\n'){
+            Lex->LineNumber++;
+            Lex->LinePosition = 0;
+        } else {
+            Lex->LinePosition++;
+        }
     } else {
-        Lex->LinePosition++;
+        printf("Error: can not Advance Source that is allready at the end of the file!!!");
     }
-
+    
     return Lex->CurrentCharacter;
 }

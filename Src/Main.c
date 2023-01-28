@@ -39,18 +39,16 @@ int main(int ArgC, char** Argv){
 struct Lexer* Lex = malloc(sizeof(struct Lexer));
 
 printf("Opening Lexer on File %s\n", Argv[1]);
-int Result = OpenLexerFileSource(Lex, Argv[1], 60);
+printf("More code before the entry of the function...\n");
+int Result = OpenLexerFileSource(Lex, Argv[1], 100);
 if(Result){
     perror("Error Opening Lexer the Session will time out");
     return 1;
 }
 
-printf("Lexing Tokens...");
-struct TokenList* List;
-Result = LexTokens(Lex, &List);
-if(Result == 1){
-    return 1;
-}
+struct TokenList* List = LexTokens(Lex);
+
+printf("Printing Token List...");
 
 PrintTokenList(List);
 

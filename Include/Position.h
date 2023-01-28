@@ -6,7 +6,7 @@ struct Position{
     int LinePosition;
 };
 
-void PrintPosition(struct Position Pos);
+void PrintPosition(struct Position* Pos);
 
 
 #endif
