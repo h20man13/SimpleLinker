@@ -11,6 +11,15 @@ struct LinkerFile{
     struct RelocationEntry* Entries;
 };
 
+struct LinkerFileListElem{
+    struct LinkerFile* File;
+    struct LinkerFileListElem* Next;
+};
+
+struct LinkerFileList{
+    struct LinkerFileListElem* Root;
+};
+
 void PrintLinkerFile(struct LinkerFile*);
 
 #endif 

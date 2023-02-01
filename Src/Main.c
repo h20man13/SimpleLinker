@@ -56,16 +56,14 @@ PrintTokenList(List);
 
 #ifdef PROJECT_1_FULL
 
-struct Lexer* Lex = malloc(sizeof(struct Lexer));
-int Result = OpenLexerFileSource(Lex, Argv[1], 100);
-struct TokenList* List = LexTokens(Lex);
-
-struct Parser* P = malloc(sizeof(struct Parser));
-P->Tokens = List;
-
-struct LinkerFile* LFile = ParseLinkerFile(P);
-PrintLinkerFile(LFile);
-
+struct CommandLine* CommandLine = ParseCommandLineData(ArgC, Argv);
+struct LinkerFileList* List = ParseLinkerFiles(CommandLine);
+//Now we have a List of Linker Files that were Parsed.
+//After they are Parsed we need to do the following
+//We need to Add all of the Segmnets to the Output Linker File.
+//All this is supported inside the Link Function
+struct LinkerFile* OutputFile = Link(List);
+PrintLinkerFile(OutputFile);
 
 #endif
 }

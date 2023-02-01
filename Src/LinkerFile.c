@@ -3,6 +3,7 @@
 #include "Symbol.h"
 #include "RelocationEntry.h"
 #include <stdio.h>
+#include <string.h>
 
 
 void PrintLinkerFile(struct LinkerFile* ToPrint){

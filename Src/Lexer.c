@@ -187,11 +187,11 @@ struct TokenList* LexTokens(struct Lexer* Lex){
     struct TokenList* TokList = malloc(sizeof(struct TokenList));
     struct Token* Tok;
     if(!feof(Lex->Source)){
-        if(Tok = LexToken(Lex)){
+        if((Tok = LexToken(Lex))){
             struct TokenListElem* Elem = malloc(sizeof(struct TokenListElem));
             TokList->Root = Elem;
             Elem->Tok = Tok;
-            while(Tok = LexToken(Lex)){
+            while((Tok = LexToken(Lex))){
                 Elem->Next = malloc(sizeof(struct TokenListElem));
                 Elem = Elem->Next;
                 Elem->Tok = Tok;

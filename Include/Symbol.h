@@ -15,4 +15,13 @@ struct Symbol{
     enum SymbolType Type;
 };
 
+struct SymbolEntry{
+    struct Symbol* Data;
+    struct SymbolEntry* Next;
+};
+
+struct SymbolList{
+    struct SymbolEntry* Root;
+};
+
 #endif

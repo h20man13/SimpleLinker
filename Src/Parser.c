@@ -4,6 +4,7 @@
 #include <Symbol.h>
 #include "RelocationEntry.h"
 #include "Token.h"
+#include "Lexer.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -62,6 +63,30 @@ struct Token* EatIfYummy(struct Parser* P, enum TokenType T){
         return Eat(P, T, ABORT_STRATEGY);
     }
     return NULL;
+}
+
+struct LinkerFileList* ParseLinkerFiles(struct CommandLine* Command){
+    struct LinkerFileList* List = malloc(sizeof(struct LinkerFileList));
+    for(struct InputFileListElem* Elem = Command->Inputs->Root; Elem != NULL; Elem = Elem->Next){
+        struct Lexer* Lex = malloc(sizeof(struct Lexer));
+        int Result = OpenLexerFileSource(Lex, Elem->File->FilePath, 100);
+        struct TokenList* TokList = LexTokens(Lex);
+
+        struct Parser* P = malloc(sizeof(struct Parser));
+        P->Tokens = TokList;
+    
+        struct LinkerFile* LFile = ParseLinkerFile(P);
+        if(List->Root == NULL){
+            List->Root = malloc(sizeof(struct LinkerFileListElem));
+            List->Root->File = LFile;
+            List->Root->Next = NULL;
+        } else {
+            struct LinkerFileListElem* ListElem = List->Root;
+            List->Root = malloc(sizeof(struct LinkerFileListElem));
+            List->Root->File = LFile;
+            List->Root->Next = ListElem;
+        }
+    }
 }
 
 struct LinkerFile* ParseLinkerFile(struct Parser* Context){
