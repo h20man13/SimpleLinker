@@ -1,6 +1,7 @@
 #include "LinkerFile.h"
 #include "Parser.h"
 #include "Lexer.h"
+#include "Linker.h"
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -62,7 +63,7 @@ struct LinkerFileList* List = ParseLinkerFiles(CommandLine);
 //After they are Parsed we need to do the following
 //We need to Add all of the Segmnets to the Output Linker File.
 //All this is supported inside the Link Function
-struct LinkerFile* OutputFile = Link(List);
+struct LinkerFile* OutputFile = Link(CommandLine, List);
 PrintLinkerFile(OutputFile);
 
 #endif

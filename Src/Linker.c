@@ -1,6 +1,7 @@
 #include "Linker.h"
 #include "LinkerFile.h"
 #include "Segment.h"
+#include "Symbol.h"
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -35,18 +36,58 @@ static struct SegmentList* AllocateStorage(struct LinkerFileList* Sources){
     return List;
 }
 
+static struct SymbolList* ResolveSymbols(struct LinkerFileList* Sources){
+    struct SymbolList* List = malloc(sizeof(struct SymbolList));
+    for(struct LinkerFileListElem* Elem = Sources->Root; Elem != NULL; Elem=Elem->Next){
+        for(int i = 0; i < Elem->File->NumberSymbols; i++){
+            struct Symbol* Sym = &(Elem->File->Symbols[i]);
+            if(Sym->Type == U){
+                if(ContainsSymbol(List, Sym->Name, D)){
+                    //We can just ignore this Symbol it doesnt need to be added to the List
+                    //Because a Defined Version was allready added
+                } else if(!ContainsSymbol(List, Sym->Name, U)){
+                    //If there isnt a Defined Symbol and there isnt a Undefined Symbol we can add 
+                    //the Undefined Symbol to the List
+                    AddSymbol(List, Sym);
+                }
+            } else {
+                //The Symbol Type is Defined and therefor should probably be added to the list
+                if(ContainsSymbol(List, Sym->Name, D)){
+                    //If the Symbol Table allready contains a Defined Symbol then we need to report an Error
+                    printf("Symbol mismatch occured!!!\n the Symbol was allready defined somewhere else in the Program...\n");
+                } else if(ContainsSymbol(List, Sym->Name, U)){
+                    //If we contain an Undefined Symbol We need to OverWrite the Undefined Symbol with the Defined Symbol
+                    OverWriteSymbol(List, Sym);
+                } else {
+                    //Otherwise we need to add the Symbol to the Corresponding List
+                    AddSymbol(List, Sym);
+                }
+            }
+        }
+    }
+    return List;
+}
+
 struct LinkerFile* Link(struct CommandLine* Command, struct LinkerFileList* Sources){
     //First we will go through all the Segments in the Target and modify both the Definitions and the Object Data
     //Associated with each of the Segments
     struct SegmentList* AllocatedSegments = AllocateStorage(Sources);
+    struct SymbolList* ResolvedSymbols =  ResolveSymbols(Sources);
 
     int NumSegments = NumberOfSegments(AllocatedSegments);
     struct Segment* SegmentArray = ToSegmentArray(AllocatedSegments);
 
+    int NumSymbols = NumberOfSymbols(ResolvedSymbols);
+    struct Symbol* SymbolTable = ToSymbolArray(ResolvedSymbols);
     struct LinkerFile* OutputLinkerFile = malloc(sizeof(struct LinkerFile));
-    memcpy(OutputLinkerFile->MagicNumber, "LINK", 5);
-    OutputLinkerFile->Segments = SegmentArray;
+    memcpy(OutputLinkerFile->MagicNumber, "LINK", 4);
     OutputLinkerFile->NumberSegments = NumSegments;
+    OutputLinkerFile->NumberSymbols = NumSymbols;
+    OutputLinkerFile->NumberRelocationEntries = 0;
+    OutputLinkerFile->Segments = SegmentArray;
+    OutputLinkerFile->Symbols = SymbolTable;
+    OutputLinkerFile->Entries = NULL;
+
 
     return OutputLinkerFile;
 }

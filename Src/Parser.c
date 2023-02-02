@@ -87,6 +87,8 @@ struct LinkerFileList* ParseLinkerFiles(struct CommandLine* Command){
             List->Root->Next = ListElem;
         }
     }
+
+    return List;
 }
 
 struct LinkerFile* ParseLinkerFile(struct Parser* Context){
@@ -177,7 +179,7 @@ struct RelocationEntry* ParseRelocationEntry(struct Parser* Context){
     struct RelocationEntry* Entry = malloc(sizeof(struct RelocationEntry));
     Entry->Location = atoi(LocationTok->Text);
     Entry->Seg = SegTok->Text;
-    Entry->Ref = RefTok->Text;
+    Entry->Ref = atoi(RefTok->Text);
     Entry->Type = (strcmp(RelTypeTok->Text, "R4")) ? R4 : A4;
 
     return Entry;
@@ -211,7 +213,7 @@ struct Symbol* ParseSymbol(struct Parser* Context){
     Symbol->Name = SymbolTok->Text;
     Symbol->Value = atoi(SymbolValueTok->Text);
     Symbol->SegmentNumber = atoi(SegmentNumberTok->Text);
-    Symbol->Type == (strcmp(DefinedOrUndefinedTok->Text, "D")) ? D : U;
+    Symbol->Type = (strcmp(DefinedOrUndefinedTok->Text, "D")) ? D : U;
 
     return Symbol;
 }
