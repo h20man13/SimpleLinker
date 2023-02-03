@@ -74,7 +74,7 @@ static struct Token* CreateTokenAndResetLexer(struct Lexer* Lex, enum TokenType 
 
 struct Token* LexToken(struct Lexer* Lex){
     if(Lex->Source == NULL){
-        printf("Error: Lexrer Source was not ititialized correctly!!!\n");
+        printf("Error: Lexer Source was not ititialized correctly!!!\n");
         return NULL;
     }
 

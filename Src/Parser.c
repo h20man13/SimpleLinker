@@ -12,18 +12,12 @@
 #define TRACE
 
 struct Token* Eat(struct Parser* P, enum TokenType T, enum ParserErrorStrategy Strategy){
-    #ifdef TRACE 
-        printf("Checking if Token is empty!!!");
-    #endif
     if(TokenListIsEmpty(P->Tokens)){
         printf("Cannot Eat Token because the Token List Is Empty\n...");
         return NULL; 
     }
 
     if(P->Tokens->Root->Tok->Type == T){
-        #ifdef TRACE
-        printf("TokenMatch is a success...\n");
-        #endif
         return RemoveToken(P->Tokens);
     } else {
         if(Strategy == SKIP_STRATEGY){
@@ -69,26 +63,12 @@ struct Token* EatIfYummy(struct Parser* P, enum TokenType T){
 
 struct LinkerFileList* ParseLinkerFiles(struct CommandLine* Command){
     struct LinkerFileList* List = malloc(sizeof(struct LinkerFileList));
-#ifdef TRACE
-    printf("Collecting InputFiles...\n");
-#endif
     for(struct InputFileListElem* Elem = Command->Inputs->Root; Elem != NULL; Elem=Elem->Next){
         struct Lexer* Lex = malloc(sizeof(struct Lexer));
-#ifdef TRACE
-        printf("Opening File Source at path %s\n", Elem->File->FilePath);
-#endif
         int Result = OpenLexerFileSource(Lex, Elem->File->FilePath, 100);
         struct TokenList* TokList = LexTokens(Lex);
-#ifdef TRACE
-        printf("Lexed Tokens for File At Path %s\n", Elem->File->FilePath);
-        printf("Printing Token List...");
-        PrintTokenList(TokList);
-#endif
         struct Parser* P = malloc(sizeof(struct Parser));
         P->Tokens = TokList;
-#ifdef TRACE
-        printf("Fired Parser At Path %s\n", Elem->File->FilePath);
-#endif
         struct LinkerFile* LFile = ParseLinkerFile(P);
         if(List->Root == NULL){
             List->Root = malloc(sizeof(struct LinkerFileListElem));
@@ -106,17 +86,10 @@ struct LinkerFileList* ParseLinkerFiles(struct CommandLine* Command){
 }
 
 struct LinkerFile* ParseLinkerFile(struct Parser* Context){
-#ifdef TRACE
-    printf("Initializing Magic Number...\n");
-#endif
     //First we need to Parse the Magic Number
     struct LinkerFile* File = malloc(sizeof(struct LinkerFile));
     struct Token* Tok = Eat(Context, TEXT_TYPE, ABORT_STRATEGY);
     memcpy(File->MagicNumber, Tok->Text, 4);
-
-#ifdef TRACE
-    printf("Initializing Number of Segments...\n");
-#endif
     
     //Now we need to Parse the Next 3 Header Numbers 
     //that say how many entries of each type that is in the file
@@ -124,26 +97,15 @@ struct LinkerFile* ParseLinkerFile(struct Parser* Context){
     File->NumberSegments = atoi(Tok->Text);
     File->Segments = malloc(sizeof(struct Segment) * File->NumberSegments);
 
-#ifdef TRACE
-    printf("Initializing Number of Symbols...\n");
-#endif
-
     Tok = Eat(Context, INTEGER_TYPE, ABORT_STRATEGY);
     File->NumberSymbols = atoi(Tok->Text);
     File->Symbols = malloc(sizeof(struct Symbol) * File->NumberSymbols);
-
-#ifdef TRACE
-    printf("Initializing Number of Relocaton Entries...\n");
-#endif
 
     Tok = Eat(Context, INTEGER_TYPE, ABORT_STRATEGY);
     File->NumberRelocationEntries = atoi(Tok->Text);
     File->Entries = malloc(sizeof(struct RelocationEntry) * File->NumberRelocationEntries);
 
     //After this we need to parse the following Sections based on their input type
-#ifdef TRACE
-    printf("Parsing Segment Definitions...\n");
-#endif
 
     for(int i = 0; i < File->NumberSegments; i++){
         struct Segment* Seg = ParseSegment(Context);
@@ -151,27 +113,17 @@ struct LinkerFile* ParseLinkerFile(struct Parser* Context){
     }
 
     //After this we need to Parse the Symbols that are utilized in the ABI
-#ifdef TRACE
-    printf("Parsing Symbol Definitions...\n");
-#endif
     for(int i = 0; i < File->NumberSegments; i++){
         struct Symbol* Sym = ParseSymbol(Context);
         memcpy(File->Symbols + i, Sym, sizeof(struct Symbol));
     }
 
-#ifdef TRACE
-    printf("Parsing Relocation Entries...\n");
-#endif
     //After this then comes the Relocation entries
     for(int i = 0; i < File->NumberRelocationEntries; i++){
         struct RelocationEntry* Entry = ParseRelocationEntry(Context);
         memcpy(File->Entries + i, Entry, sizeof(struct RelocationEntry));
     }
 
-#ifdef TRACE
-    //Now finally comes the Object Data
-    printf("Parsing Object Data...\n");
-#endif
     for(int i = 0; i < File->NumberSegments; i++){
         struct Segment* Seg = File->Segments + i;
         Tok = Eat(Context, INTEGER_TYPE, SKIP_STRATEGY);

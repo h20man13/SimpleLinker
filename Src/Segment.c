@@ -80,8 +80,24 @@ struct Segment* GetSegment(struct SegmentList* List, char* SegmentName){
 void MergeSegment(struct SegmentList* List, struct Segment* Source){
     for(struct SegmentListElem* Elem = List->Root; Elem != NULL; Elem=Elem->Next){
         if(strcmp(Elem->Segment->Name, Source->Name) == 0){
-            Elem->Segment->NumberOfBytes += Source->NumberOfBytes;
-            Elem->Segment->Flags |= Source->Flags;
+            if(strcmp(Source->Name, ".common") == 0){
+                //If we are merging a Common block we need to take the one with the Largest Size
+                //If the one in the list has the largest size then we dont need to change it
+                //however if the Segment we are merging contains the largest size then we need
+                //to take that segment instead
+                if(Source->NumberOfBytes > Elem->Segment->NumberOfBytes){
+                    Elem->Segment->NumberOfBytes = Source->NumberOfBytes;
+                }
+            } else {
+                //Otherwise add the sizes together to get the total size of the New Segment
+                Elem->Segment->NumberOfBytes += Source->NumberOfBytes;
+            }
+            
+            //We need to change Elem->Segments Flags so that they are the most restrictive out of the Merged Segments...
+            //A bitwise and should allow for that to be the case
+            Elem->Segment->Flags &= Source->Flags;
+
+            //Finally since the Linker Links Ascii Text we need to Append all the Contents into the New Section
             Elem->Segment->ObjectData = strcat(Elem->Segment->ObjectData, Source->ObjectData);
             return;
         }
