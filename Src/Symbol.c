@@ -10,7 +10,7 @@ char* SymbolTypeToString(enum SymbolType Type){
 
 struct Symbol* GetSymbol(struct SymbolList* List, char* Name, enum SymbolType Type){
     for(struct SymbolEntry* Entry = List->Root; Entry != NULL; Entry=Entry->Next){
-        if(strcmp(Name, Entry->Data->Name) == 0 && Entry->Data->Type == U){
+        if(strcmp(Name, Entry->Data->Name) == 0 && Entry->Data->Type == Type){
             return Entry->Data;
         }
     }
@@ -19,7 +19,7 @@ struct Symbol* GetSymbol(struct SymbolList* List, char* Name, enum SymbolType Ty
 
 int ContainsSymbol(struct SymbolList* List, char* Name, enum SymbolType Type){
     for(struct SymbolEntry* Entry = List->Root; Entry != NULL; Entry=Entry->Next){
-        if(strcmp(Name, Entry->Data->Name) == 0 && Entry->Data->Type == U){
+        if(strcmp(Name, Entry->Data->Name) == 0 && Entry->Data->Type == Type){
             return 1;
         }
     }
@@ -41,7 +41,7 @@ void AddSymbol(struct SymbolList* List, struct Symbol* Sym){
 
 void OverWriteSymbol(struct SymbolList* List, struct Symbol* Sym){
     for(struct SymbolEntry* Entry = List->Root; Entry != NULL; Entry=Entry->Next){
-        if(Entry->Data->Name == Sym->Name){
+        if(strcmp(Entry->Data->Name, Sym->Name) == 0){
             Entry->Data = Sym;
         }
     }

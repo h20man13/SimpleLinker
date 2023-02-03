@@ -6,13 +6,16 @@
 #include <stdio.h>
 #include <string.h>
 
+#define TRACE
+
 static struct SegmentList* AllocateStorage(struct LinkerFileList* Sources){
     //The First Pass we need to go through all the Source Segments and either
     //1) Add the Segment if it doesnt exists allready
     //2) Merge the Segment into an already existing Segment
     //After this process is done on all the Linker Files
-
     struct SegmentList* List = malloc(sizeof(struct SegmentList));
+    List->Root = NULL;
+
     for(struct LinkerFileListElem* Elem = Sources->Root; Elem != NULL; Elem=Elem->Next){
         for(int i = 0; i < Elem->File->NumberSegments; i++){
             struct Segment* Seg = &(Elem->File->Segments[i]);
@@ -38,14 +41,13 @@ static struct SegmentList* AllocateStorage(struct LinkerFileList* Sources){
 
 static struct SymbolList* ResolveSymbols(struct LinkerFileList* Sources){
     struct SymbolList* List = malloc(sizeof(struct SymbolList));
+    List->Root = NULL;
+
     for(struct LinkerFileListElem* Elem = Sources->Root; Elem != NULL; Elem=Elem->Next){
         for(int i = 0; i < Elem->File->NumberSymbols; i++){
             struct Symbol* Sym = &(Elem->File->Symbols[i]);
             if(Sym->Type == U){
-                if(ContainsSymbol(List, Sym->Name, D)){
-                    //We can just ignore this Symbol it doesnt need to be added to the List
-                    //Because a Defined Version was allready added
-                } else if(!ContainsSymbol(List, Sym->Name, U)){
+                if(!ContainsSymbol(List, Sym->Name, U) && !ContainsSymbol(List, Sym->Name, D)){
                     //If there isnt a Defined Symbol and there isnt a Undefined Symbol we can add 
                     //the Undefined Symbol to the List
                     AddSymbol(List, Sym);
@@ -65,6 +67,14 @@ static struct SymbolList* ResolveSymbols(struct LinkerFileList* Sources){
             }
         }
     }
+
+    //Finnaly we need to still report any aymbols that are undefined up to this point
+    for(struct SymbolEntry* Elem = List->Root; Elem != NULL; Elem=Elem->Next){
+        if(Elem->Data->Type == U){
+            printf("Error: Definition of Symbol %s is undefined and therefor will be left unresolved!!!\n", Elem->Data->Name);
+        }
+    }
+
     return List;
 }
 
@@ -79,6 +89,7 @@ struct LinkerFile* Link(struct CommandLine* Command, struct LinkerFileList* Sour
 
     int NumSymbols = NumberOfSymbols(ResolvedSymbols);
     struct Symbol* SymbolTable = ToSymbolArray(ResolvedSymbols);
+
     struct LinkerFile* OutputLinkerFile = malloc(sizeof(struct LinkerFile));
     memcpy(OutputLinkerFile->MagicNumber, "LINK", 4);
     OutputLinkerFile->NumberSegments = NumSegments;

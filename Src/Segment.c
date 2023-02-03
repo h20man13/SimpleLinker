@@ -4,6 +4,8 @@
 #include <stdio.h>
 #include "LinkerFile.h"
 
+#define TRACE
+
 char* SegmentFlagsToString(int FlagMask){
     char* FlagString = malloc(4);
     int index = 0;
@@ -24,19 +26,19 @@ char* SegmentFlagsToString(int FlagMask){
 }
 
 int FlagStringToInt(char* FlagString){
-    if(strcmp(FlagString, "RWP")){
+    if(strcmp(FlagString, "RWP") == 0){
         return Readable | Writable | Present;
-    } else if(strcmp(FlagString, "RW")){
+    } else if(strcmp(FlagString, "RW") == 0){
         return Readable | Writable;
-    } else if(strcmp(FlagString, "WP")){
+    } else if(strcmp(FlagString, "WP") == 0){
         return Writable | Present;
-    } else if(strcmp(FlagString, "RP")){
+    } else if(strcmp(FlagString, "RP") == 0){
         return Readable | Present;
-    } else if(strcmp(FlagString, "R")){
+    } else if(strcmp(FlagString, "R") == 0){
         return Readable;
-    } else if(strcmp(FlagString, "W")){
+    } else if(strcmp(FlagString, "W") == 0){
         return Writable;
-    } else if(strcmp(FlagString, "P")){
+    } else if(strcmp(FlagString, "P") == 0){
         return Present;
     } else {
         return -1;
@@ -62,6 +64,7 @@ int ContainsSegment(struct SegmentList* List, char* SegmentName){
             return 1;
         }
     }
+
     return 0;
 }
 
@@ -76,7 +79,7 @@ struct Segment* GetSegment(struct SegmentList* List, char* SegmentName){
 
 void MergeSegment(struct SegmentList* List, struct Segment* Source){
     for(struct SegmentListElem* Elem = List->Root; Elem != NULL; Elem=Elem->Next){
-        if(Elem->Segment->Name == Source->Name){
+        if(strcmp(Elem->Segment->Name, Source->Name) == 0){
             Elem->Segment->NumberOfBytes += Source->NumberOfBytes;
             Elem->Segment->Flags |= Source->Flags;
             Elem->Segment->ObjectData = strcat(Elem->Segment->ObjectData, Source->ObjectData);
