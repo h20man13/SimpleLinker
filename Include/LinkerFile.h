@@ -21,5 +21,6 @@ struct LinkerFileList{
 };
 
 void PrintLinkerFile(struct LinkerFile*);
+void WriteLinkerFileToOutput(struct LinkerFile* DataToOutput, char* FileName);
 
 #endif 

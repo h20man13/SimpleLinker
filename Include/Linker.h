@@ -6,6 +6,6 @@
 
 #define ELF_STARTING_ADDRESS 1000
 
-struct LinkerFile* Link(struct CommandLine* Command, struct LinkerFileList* Sources);
+struct LinkerFile* Link(struct LinkerFileList* Sources);
 
 #endif

@@ -1,10 +1,11 @@
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
+
 #include "Linker.h"
 #include "LinkerFile.h"
 #include "Segment.h"
 #include "Symbol.h"
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
 
 #define TRACE
 
@@ -56,7 +57,7 @@ static struct SymbolList* ResolveSymbols(struct LinkerFileList* Sources){
                 //The Symbol Type is Defined and therefor should probably be added to the list
                 if(ContainsSymbol(List, Sym->Name, D)){
                     //If the Symbol Table allready contains a Defined Symbol then we need to report an Error
-                    printf("Symbol mismatch occured!!!\n the Symbol was allready defined somewhere else in the Program...\n");
+                    printf("Multiple Definition of Symbol %s!!!\nTthe Symbol %s was allready defined somewhere else in the Program\n", Sym->Name, Sym->Name);
                 } else if(ContainsSymbol(List, Sym->Name, U)){
                     //If we contain an Undefined Symbol We need to OverWrite the Undefined Symbol with the Defined Symbol
                     OverWriteSymbol(List, Sym);
@@ -78,7 +79,7 @@ static struct SymbolList* ResolveSymbols(struct LinkerFileList* Sources){
     return List;
 }
 
-struct LinkerFile* Link(struct CommandLine* Command, struct LinkerFileList* Sources){
+struct LinkerFile* Link(struct LinkerFileList* Sources){
     //First we will go through all the Segments in the Target and modify both the Definitions and the Object Data
     //Associated with each of the Segments
     struct SegmentList* AllocatedSegments = AllocateStorage(Sources);
