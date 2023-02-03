@@ -9,6 +9,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#define TRACE
+
 struct Token* Eat(struct Parser* P, enum TokenType T, enum ParserErrorStrategy Strategy){
     #ifdef TRACE 
         printf("Checking if Token is empty!!!");
@@ -67,14 +69,26 @@ struct Token* EatIfYummy(struct Parser* P, enum TokenType T){
 
 struct LinkerFileList* ParseLinkerFiles(struct CommandLine* Command){
     struct LinkerFileList* List = malloc(sizeof(struct LinkerFileList));
-    for(struct InputFileListElem* Elem = Command->Inputs->Root; Elem != NULL; Elem = Elem->Next){
+#ifdef TRACE
+    printf("Collecting InputFiles...\n");
+#endif
+    for(struct InputFileListElem* Elem = Command->Inputs->Root; Elem != NULL; Elem=Elem->Next){
         struct Lexer* Lex = malloc(sizeof(struct Lexer));
+#ifdef TRACE
+        printf("Opening File Source at path %s\n", Elem->File->FilePath);
+#endif
         int Result = OpenLexerFileSource(Lex, Elem->File->FilePath, 100);
         struct TokenList* TokList = LexTokens(Lex);
-
+#ifdef TRACE
+        printf("Lexed Tokens for File At Path %s\n", Elem->File->FilePath);
+        printf("Printing Token List...");
+        PrintTokenList(TokList);
+#endif
         struct Parser* P = malloc(sizeof(struct Parser));
         P->Tokens = TokList;
-    
+#ifdef TRACE
+        printf("Fired Parser At Path %s\n", Elem->File->FilePath);
+#endif
         struct LinkerFile* LFile = ParseLinkerFile(P);
         if(List->Root == NULL){
             List->Root = malloc(sizeof(struct LinkerFileListElem));
